@@ -1,109 +1,91 @@
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
-import AuthModal from './auth/AuthModal';
-import { useAuth } from '../context/AuthContext';
-import Toast from './Toast';
+import { useAuth } from "@/context/AuthContext"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { useRouter } from "next/router"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { UserCircle } from "lucide-react"
+import { AuthModal } from "./auth/AuthModal"
+import { useState } from "react"
 
 export default function Header() {
-    const { user, logout, error } = useAuth();
-    const [showAuthModal, setShowAuthModal] = useState(false);
-    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-    const router = useRouter();
+  const { user, logout } = useAuth()
+  const router = useRouter()
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
-    // Show error toast when auth error occurs
-    useEffect(() => {
-        if (error) {
-            setToast({ message: error, type: 'error' });
-        }
-    }, [error]);
+  const handleLogout = () => {
+    logout()
+    router.push('/')
+  }
 
-    const handleLogout = () => {
-        logout();
-        setToast({ message: 'Successfully logged out', type: 'success' });
-        router.push('/');
-    };
+  // Always include Pricing, then add other nav items if user is logged in
+  const navItems = [
+    { href: '/pricing', label: 'Pricing' },
+    ...(user ? [
+      { href: '/dashboard', label: 'Dashboard' },
+      { href: '/paraphrase', label: 'Paraphrase' },
+      { href: '/settings', label: 'Settings' },
+    ] : [])
+  ]
 
-    const isActive = (path: string) => router.pathname === path;
+  return (
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-8">
+          <Link href="/" className="flex items-center space-x-2">
+            <span className="font-bold text-xl">Fraz AI</span>
+          </Link>
+          <nav className="hidden md:flex gap-6">
+            {navItems.map((item) => (
+              <Link 
+                key={item.href}
+                href={item.href}
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  router.pathname === item.href ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
-    return (
-        <>
-            <header className="bg-white shadow-md">
-                <div className="container mx-auto px-4 py-6">
-                    <nav className="flex items-center justify-between">
-                        <div className="flex items-center space-x-8">
-                            <Link href="/" className="text-2xl font-bold text-primary-600">
-                                Paraphrase AI
-                            </Link>
-                            {user && (
-                                <div className="flex space-x-4">
-                                    <Link
-                                        href="/dashboard"
-                                        className={`px-3 py-2 rounded-md text-sm font-medium ${
-                                            isActive('/dashboard')
-                                                ? 'bg-primary-100 text-primary-700'
-                                                : 'text-gray-600 hover:text-primary-600'
-                                        }`}
-                                    >
-                                        Dashboard
-                                    </Link>
-                                    <Link
-                                        href="/paraphrase"
-                                        className={`px-3 py-2 rounded-md text-sm font-medium ${
-                                            isActive('/paraphrase')
-                                                ? 'bg-primary-100 text-primary-700'
-                                                : 'text-gray-600 hover:text-primary-600'
-                                        }`}
-                                    >
-                                        Paraphrase
-                                    </Link>
-                                    <Link
-                                        href="/settings"
-                                        className={`px-3 py-2 rounded-md text-sm font-medium ${
-                                            isActive('/settings')
-                                                ? 'bg-primary-100 text-primary-700'
-                                                : 'text-gray-600 hover:text-primary-600'
-                                        }`}
-                                    >
-                                        Settings
-                                    </Link>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex items-center space-x-4">
-                            {user ? (
-                                <div className="flex items-center space-x-4">
-                                    <span className="text-gray-600">Welcome, {user.name}</span>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="text-gray-600 hover:text-primary-600"
-                                    >
-                                        Sign Out
-                                    </button>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => setShowAuthModal(true)}
-                                    className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
-                                >
-                                    Sign In
-                                </button>
-                            )}
-                        </div>
-                    </nav>
-                </div>
-            </header>
-            <AuthModal 
-                isOpen={showAuthModal}
-                onClose={() => setShowAuthModal(false)}
-            />
-            {toast && (
-                <Toast 
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
-            )}
-        </>
-    );
+        <div className="flex items-center gap-4">
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <UserCircle className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/settings')}>
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button onClick={() => setShowAuthModal(true)} variant="default">
+              Sign In
+            </Button>
+          )}
+        </div>
+      </div>
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
+    </header>
+  )
 }

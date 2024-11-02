@@ -1,11 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { refreshToken, isTokenExpired } from '../utils/auth';
-
-interface User {
-    id: number;
-    name: string;
-    email: string;
-}
+import { User, AuthResponse } from "@/types/user";
+import { login as loginApi, register as registerApi } from "@/utils/api";
+import { useToast } from "./ToastContext";
 
 interface AuthContextType {
     user: User | null;
@@ -18,156 +14,85 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const TOKEN_KEY = "auth_token";
+const USER_KEY = "user_data";
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [mounted, setMounted] = useState(false);
+    const { showToast } = useToast();
 
-    // Only run after component is mounted (client-side)
     useEffect(() => {
-        setMounted(true);
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
+        // Check for existing auth on mount
+        const token = localStorage.getItem(TOKEN_KEY);
+        const userData = localStorage.getItem(USER_KEY);
+
+        if (token && userData) {
+            try {
+                setUser(JSON.parse(userData));
+            } catch (e) {
+                console.error("Failed to parse user data:", e);
+                localStorage.removeItem(TOKEN_KEY);
+                localStorage.removeItem(USER_KEY);
+            }
         }
         setIsLoading(false);
     }, []);
 
-    useEffect(() => {
-        if (!mounted) return;
-
-        const verifySession = async () => {
-            const token = localStorage.getItem('token');
-            if (!token || isTokenExpired(token)) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                setUser(null);
-                setIsLoading(false);
-                return;
-            }
-
-            try {
-                const response = await fetch('http://localhost:8080/api/auth/verify', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    throw new Error('Session expired');
-                }
-
-                const data = await response.json();
-                setUser(data.user);
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                }
-                localStorage.setItem('user', JSON.stringify(data.user));
-            } catch (error) {
-                console.error('Session verification failed:', error);
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                setUser(null);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        verifySession();
-    }, [mounted]);
-
-    useEffect(() => {
-        if (!mounted || !user) return;
-
-        // Check token every minute
-        const tokenCheckInterval = setInterval(async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                setUser(null);
-                return;
-            }
-
-            if (isTokenExpired(token)) {
-                const newToken = await refreshToken();
-                if (!newToken) {
-                    setUser(null);
-                }
-            }
-        }, 60000); // Check every minute
-
-        return () => clearInterval(tokenCheckInterval);
-    }, [mounted, user]);
+    const handleAuthResponse = ({ token, user }: AuthResponse) => {
+        localStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        setUser(user);
+        setError(null);
+    };
 
     const login = async (email: string, password: string) => {
         try {
             setError(null);
-            const response = await fetch('http://localhost:8080/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Invalid email or password');
-            }
-
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            setUser(data.user);
+            const response = await loginApi(email, password);
+            handleAuthResponse(response);
+            showToast("Successfully logged in", "success");
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'An error occurred during login';
+            const message = err instanceof Error ? err.message : "Failed to login";
             setError(message);
-            throw new Error(message);
+            showToast(message, "error");
+            throw err;
         }
     };
 
     const register = async (name: string, email: string, password: string) => {
         try {
             setError(null);
-            const response = await fetch('http://localhost:8080/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ name, email, password }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to register');
-            }
-
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            setUser(data.user);
+            const response = await registerApi(name, email, password);
+            handleAuthResponse(response);
+            showToast("Successfully registered", "success");
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'An error occurred during registration';
+            const message = err instanceof Error ? err.message : "Failed to register";
             setError(message);
-            throw new Error(message);
+            showToast(message, "error");
+            throw err;
         }
     };
 
     const logout = () => {
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-        }
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
         setUser(null);
+        showToast("Successfully logged out", "success");
     };
 
-    // Don't render children until after first mount to prevent hydration errors
-    if (!mounted) {
-        return null;
-    }
-
     return (
-        <AuthContext.Provider value={{ user, isLoading, error, login, register, logout }}>
+        <AuthContext.Provider
+            value={{
+                user,
+                isLoading,
+                error,
+                login,
+                register,
+                logout,
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );
@@ -176,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
     const context = useContext(AuthContext);
     if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        throw new Error("useAuth must be used within an AuthProvider");
     }
     return context;
 }

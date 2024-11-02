@@ -1,4 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
 
 interface Props {
     children: ReactNode;
@@ -26,19 +28,23 @@ export default class ErrorBoundary extends Component<Props, State> {
     public render() {
         if (this.state.hasError) {
             return (
-                <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                    <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-                        <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
-                        <p className="text-gray-600 mb-4">
-                            {this.state.error?.message || 'An unexpected error occurred'}
-                        </p>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
-                        >
-                            Reload Page
-                        </button>
-                    </div>
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <Card className="w-full max-w-md">
+                        <CardHeader>
+                            <CardTitle className="text-destructive">Something went wrong</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <p className="text-muted-foreground">
+                                {this.state.error?.message || 'An unexpected error occurred'}
+                            </p>
+                            <Button
+                                onClick={() => window.location.reload()}
+                                className="w-full"
+                            >
+                                Reload Page
+                            </Button>
+                        </CardContent>
+                    </Card>
                 </div>
             );
         }

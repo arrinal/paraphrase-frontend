@@ -6,13 +6,7 @@ import ParaphraseForm from '../components/ParaphraseForm';
 import ParaphraseHistory from '../components/ParaphraseHistory';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getParaphraseHistory, getUsedLanguages } from '../utils/api';
-
-interface HistoryFilters {
-    language?: string;
-    style?: string;
-    startDate?: Date;
-    endDate?: Date;
-}
+import { SUPPORTED_LANGUAGES } from '../utils/constants';
 
 interface HistoryEntry {
     id: number;
@@ -21,6 +15,13 @@ interface HistoryEntry {
     language: string;
     style: string;
     created_at: string;
+}
+
+interface HistoryFilters {
+    language?: string;
+    style?: string;
+    startDate?: Date;
+    endDate?: Date;
 }
 
 export default function ParaphrasePage() {
@@ -46,31 +47,18 @@ export default function ParaphrasePage() {
         }
     }, [user, currentPage, filters]);
 
-    useEffect(() => {
-        const fetchLanguages = async () => {
-            try {
-                const languages = await getUsedLanguages();
-                setAvailableLanguages(languages);
-            } catch (error) {
-                console.error('Failed to fetch languages:', error);
-            }
-        };
-
-        if (user) {
-            fetchLanguages();
-        }
-    }, [user]);
-
     const loadHistory = async () => {
         setIsLoadingHistory(true);
         try {
-            const [historyData, languages] = await Promise.all([
-                getParaphraseHistory(),
-                getUsedLanguages()
-            ]);
+            const historyData = await getParaphraseHistory();
+            console.log('Fetched history:', historyData);
+
+            const uniqueLanguages = Array.from(
+                new Set(historyData.map(item => item.language))
+            ).filter(Boolean);
+            setAvailableLanguages(uniqueLanguages);
             
-            // Apply filters
-            let filteredData = historyData;
+            let filteredData = [...historyData];
             if (filters.language) {
                 filteredData = filteredData.filter(item => item.language === filters.language);
             }
@@ -85,7 +73,6 @@ export default function ParaphrasePage() {
             }
             
             setHistory(filteredData);
-            setAvailableLanguages(languages);
         } catch (error) {
             console.error('Failed to load history:', error);
         } finally {

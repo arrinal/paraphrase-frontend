@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ClipboardIcon, CheckIcon } from '@heroicons/react/24/outline';
 import DiffView from './DiffView';
@@ -18,9 +18,22 @@ interface ParaphraseHistoryProps {
     copiedText: 'original' | 'paraphrased' | null;
 }
 
-export default function ParaphraseHistory({ history, onCopy, copiedText }: ParaphraseHistoryProps) {
+export default function ParaphraseHistory({ history = [], onCopy, copiedText }: ParaphraseHistoryProps) {
     const [showDiff, setShowDiff] = useState<number | null>(null);
     const [copiedItems, setCopiedItems] = useState<{ id: number; type: 'original' | 'paraphrased' }[]>([]);
+
+    // Debug log
+    useEffect(() => {
+        console.log('History data:', history);
+    }, [history]);
+
+    if (!Array.isArray(history) || history.length === 0) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                No paraphrase history available
+            </div>
+        );
+    }
 
     const formatDate = (dateString: string) => {
         try {

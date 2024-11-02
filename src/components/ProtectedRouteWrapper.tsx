@@ -10,15 +10,21 @@ export default function ProtectedRouteWrapper({ children }: ProtectedRouteWrappe
     const router = useRouter();
     const { user, isLoading } = useAuth();
 
-    // List of public routes
-    const publicRoutes = ['/', '/login', '/register'];
-    const isPublicRoute = publicRoutes.includes(router.pathname);
+    // List of public routes that don't require authentication
+    const publicRoutes = ["/", "/features", "/pricing"]
+    const isPublicRoute = publicRoutes.includes(router.pathname)
 
     useEffect(() => {
         if (!isLoading && !user && !isPublicRoute) {
-            router.push('/');
+            router.push("/")
         }
-    }, [user, isLoading, router.pathname, isPublicRoute, router]);
+    }, [user, isLoading, router.pathname, isPublicRoute, router])
 
-    return <>{children}</>;
+    // Show nothing while checking auth
+    if (isLoading) {
+        return null
+    }
+
+    // Allow render if it's a public route or user is authenticated
+    return <>{children}</>
 }

@@ -1,79 +1,57 @@
-import React, { useState } from 'react';
-import LoginForm from './LoginForm';
-import RegisterForm from './RegisterForm';
-import { useAuth } from '../../context/AuthContext';
-import Toast from '../Toast';
+import { useState } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog"
+import { LoginForm } from "./LoginForm"
+import RegisterForm from "./RegisterForm"
+import { useAuth } from "@/context/AuthContext"
 
 interface AuthModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
+  defaultView?: "login" | "register"
 }
 
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-    const [isLogin, setIsLogin] = useState(true);
-    const { login, register } = useAuth();
-    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+export function AuthModal({ isOpen, onClose, defaultView = "login" }: AuthModalProps) {
+  const [view, setView] = useState<"login" | "register">(defaultView)
+  const { error } = useAuth()
 
-    const showToast = (message: string, type: 'success' | 'error') => {
-        setToast({ message, type });
-    };
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>
+            {view === "login" ? "Welcome back" : "Create an account"}
+          </DialogTitle>
+          <DialogDescription>
+            {view === "login"
+              ? "Enter your credentials to access your account"
+              : "Sign up for a new account to get started"}
+          </DialogDescription>
+        </DialogHeader>
 
-    const handleLogin = async (email: string, password: string) => {
-        try {
-            await login(email, password);
-            showToast('Successfully logged in!', 'success');
-            setTimeout(() => {
-                onClose();
-            }, 1000);
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Failed to login';
-            showToast(errorMessage, 'error');
-        }
-    };
+        {view === "login" ? (
+          <LoginForm
+            onSuccess={onClose}
+            onRegisterClick={() => setView("register")}
+          />
+        ) : (
+          <RegisterForm
+            onSuccess={onClose}
+            onLoginClick={() => setView("login")}
+          />
+        )}
 
-    const handleRegister = async (name: string, email: string, password: string) => {
-        try {
-            await register(name, email, password);
-            showToast('Successfully registered!', 'success');
-            setTimeout(() => {
-                onClose();
-            }, 1000);
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Failed to register';
-            showToast(errorMessage, 'error');
-        }
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="relative">
-                {isLogin ? (
-                    <LoginForm 
-                        onSubmit={handleLogin} 
-                        onToggleForm={() => setIsLogin(false)} 
-                    />
-                ) : (
-                    <RegisterForm 
-                        onSubmit={handleRegister} 
-                        onToggleForm={() => setIsLogin(true)} 
-                    />
-                )}
-                <button 
-                    onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-                >
-                    ×
-                </button>
-            </div>
-            {toast && (
-                <Toast 
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
-            )}
-        </div>
-    );
+        {error && (
+          <div className="text-sm text-red-500 mt-2">
+            {error}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
 }
