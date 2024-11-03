@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button"
 import { Loader2, Copy, Check } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 import { paraphraseText } from "@/utils/api"
-import { useActivity } from "@/hooks/useActivity"
 
 const MAX_CHARS = 100000
 
@@ -36,7 +35,6 @@ export default function ParaphraseForm({ onParaphraseComplete }: ParaphraseFormP
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState<"original" | "paraphrased" | null>(null)
   const { user } = useAuth()
-  const { trackActivity } = useActivity()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,22 +47,11 @@ export default function ParaphraseForm({ onParaphraseComplete }: ParaphraseFormP
       const response: ParaphraseResponse = await paraphraseText(text, language, style)
       setResult(response.paraphrased)
       
-      await trackActivity("paraphrase", {
-        textLength: text.length,
-        language: response.language,
-        style,
-        timestamp: new Date().toISOString()
-      })
-      
       if (onParaphraseComplete) {
         onParaphraseComplete()
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to paraphrase text")
-      await trackActivity("paraphrase_error", {
-        error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString()
-      })
     } finally {
       setIsLoading(false)
     }

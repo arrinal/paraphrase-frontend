@@ -36,6 +36,7 @@ export const SUBSCRIPTION_PLANS: Plan[] = [
     id: 'basic',
     name: 'Basic',
     price: 9.99,
+    iosProductId: 'com.frazai.basic',
     currency: 'USD',
     interval: 'month',
     features: [
@@ -53,6 +54,7 @@ export const SUBSCRIPTION_PLANS: Plan[] = [
     id: 'pro',
     name: 'Professional',
     price: 19.99,
+    iosProductId: 'com.frazai.pro',
     currency: 'USD',
     interval: 'month',
     features: [

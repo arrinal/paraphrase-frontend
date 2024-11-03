@@ -4,19 +4,26 @@ import Layout from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader2, CheckCircle } from 'lucide-react'
+import { useToast } from '@/context/ToastContext'
 
 export default function CheckoutSuccessPage() {
     const router = useRouter()
+    const { showToast } = useToast()
     const [isLoading, setIsLoading] = useState(true)
+    const { session_id } = router.query
+    const [hasShownToast, setHasShownToast] = useState(false)
 
     useEffect(() => {
-        // Mock verification delay
+        if (!session_id || hasShownToast) return
+
         const timer = setTimeout(() => {
             setIsLoading(false)
+            showToast('Subscription activated successfully!', 'success')
+            setHasShownToast(true)
         }, 2000)
 
         return () => clearTimeout(timer)
-    }, [])
+    }, [session_id, showToast, hasShownToast])
 
     if (isLoading) {
         return (

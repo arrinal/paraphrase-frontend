@@ -10,6 +10,7 @@ export interface Plan {
     requestsPerDay: number;
     bulkParaphrase: boolean;
   };
+  iosProductId?: string;
 }
 
 export interface Subscription {
