@@ -1,6 +1,6 @@
 import { User } from "@/types/user"
 import { Subscription } from "@/types/subscription"
-import { API_ROUTES, API_BASE_URL } from './constants';
+import { API_ROUTES } from './constants';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
 
