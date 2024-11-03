@@ -1,7 +1,8 @@
 import { User } from "@/types/user"
 import { Subscription } from "@/types/subscription"
+import { API_ROUTES, API_BASE_URL } from './constants';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
 
 async function handleResponse(response: Response) {
   if (!response.ok) {
@@ -44,7 +45,7 @@ function getHeaders(includeAuth: boolean = true): HeadersInit {
 }
 
 export async function login(email: string, password: string) {
-  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+  const response = await fetch(`${API_BASE_URL}${API_ROUTES.LOGIN}`, {
     method: "POST",
     headers: getHeaders(false),
     body: JSON.stringify({ email, password }),
@@ -53,7 +54,7 @@ export async function login(email: string, password: string) {
 }
 
 export async function register(name: string, email: string, password: string) {
-  const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+  const response = await fetch(`${API_BASE_URL}${API_ROUTES.REGISTER}`, {
     method: "POST",
     headers: getHeaders(false),
     body: JSON.stringify({ name, email, password }),
@@ -67,7 +68,7 @@ export async function updateUserSettings(data: {
   currentPassword?: string
   newPassword?: string
 }) {
-  const response = await fetch(`${API_BASE_URL}/api/settings`, {
+  const response = await fetch(`${API_BASE_URL}${API_ROUTES.SETTINGS}`, {
     method: "PUT",
     headers: getHeaders(),
     body: JSON.stringify(data),
@@ -86,7 +87,7 @@ export async function paraphraseText(
   language: string,
   style: string
 ): Promise<ParaphraseResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/paraphrase`, {
+  const response = await fetch(`${API_BASE_URL}${API_ROUTES.PARAPHRASE}`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify({ text, language, style }),
@@ -95,7 +96,7 @@ export async function paraphraseText(
 }
 
 export async function getUserStats() {
-  const response = await fetch(`${API_BASE_URL}/api/stats`, {
+  const response = await fetch(`${API_BASE_URL}${API_ROUTES.STATS}`, {
     headers: getHeaders(),
   })
   return handleResponse(response)
@@ -116,7 +117,7 @@ interface HistoryResponse {
 }
 
 export async function getParaphraseHistory(): Promise<HistoryEntry[]> {
-  const response = await fetch(`${API_BASE_URL}/api/history`, {
+  const response = await fetch(`${API_BASE_URL}${API_ROUTES.HISTORY}`, {
     headers: getHeaders(),
   });
   const data = await handleResponse(response) as HistoryResponse;
@@ -124,7 +125,7 @@ export async function getParaphraseHistory(): Promise<HistoryEntry[]> {
 }
 
 export async function getUsedLanguages(): Promise<string[]> {
-  const response = await fetch(`${API_BASE_URL}/api/languages`, {
+  const response = await fetch(`${API_BASE_URL}${API_ROUTES.LANGUAGES}`, {
     headers: getHeaders(),
   });
   const data = await handleResponse(response);
@@ -133,7 +134,7 @@ export async function getUsedLanguages(): Promise<string[]> {
 
 export async function getUserSubscription(): Promise<Subscription | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/subscription`, {
+    const response = await fetch(`${API_BASE_URL}${API_ROUTES.SUBSCRIPTION}`, {
       headers: getHeaders(),
     });
     
@@ -151,7 +152,7 @@ export async function getUserSubscription(): Promise<Subscription | null> {
 
 export async function createCheckoutSession(planId: string, isIOS: boolean = false) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/checkout/session`, {
+    const response = await fetch(`${API_BASE_URL}${API_ROUTES.CHECKOUT}`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ 
@@ -173,7 +174,7 @@ export async function createCheckoutSession(planId: string, isIOS: boolean = fal
 }
 
 export async function cancelSubscription() {
-  const response = await fetch(`${API_BASE_URL}/api/subscription/cancel`, {
+  const response = await fetch(`${API_BASE_URL}${API_ROUTES.CANCEL_SUBSCRIPTION}`, {
     method: 'POST',
     headers: getHeaders(),
   });

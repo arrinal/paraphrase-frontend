@@ -21,15 +21,20 @@ export const PARAPHRASE_STYLES = [
 ] as const
 
 export const API_ROUTES = {
-  LOGIN: "/api/auth/login",
-  REGISTER: "/api/auth/register",
-  VERIFY: "/api/auth/verify",
-  PARAPHRASE: "/api/paraphrase",
-  HISTORY: "/api/history",
-  STATS: "/api/stats",
-  SETTINGS: "/api/settings",
-  LANGUAGES: "/api/languages",
+  LOGIN: "/auth/login",
+  REGISTER: "/auth/register",
+  VERIFY: "/auth/verify",
+  PARAPHRASE: "/paraphrase",
+  HISTORY: "/history",
+  STATS: "/stats",
+  SETTINGS: "/settings",
+  LANGUAGES: "/languages",
+  SUBSCRIPTION: "/subscription",
+  CHECKOUT: "/checkout/session",
+  CANCEL_SUBSCRIPTION: "/subscription/cancel",
 } as const
+
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 export const SUBSCRIPTION_PLANS: Plan[] = [
   {
