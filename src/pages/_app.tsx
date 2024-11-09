@@ -6,6 +6,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import ProtectedRouteWrapper from '@/components/ProtectedRouteWrapper'
 import { useEffect } from 'react';
 import { setupIOSBridge } from '@/utils/ios-bridge';
+import { SubscriptionProvider } from '@/context/SubscriptionContext';
 
 export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
@@ -16,9 +17,11 @@ export default function App({ Component, pageProps }: AppProps) {
     <ErrorBoundary>
       <ToastProvider>
         <AuthProvider>
-          <ProtectedRouteWrapper>
-            <Component {...pageProps} />
-          </ProtectedRouteWrapper>
+          <SubscriptionProvider>
+            <ProtectedRouteWrapper>
+              <Component {...pageProps} />
+            </ProtectedRouteWrapper>
+          </SubscriptionProvider>
         </AuthProvider>
       </ToastProvider>
     </ErrorBoundary>

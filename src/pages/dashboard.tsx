@@ -43,6 +43,34 @@ interface Stats {
 
 type ViewType = 'statistics' | 'history';
 
+// Add color generation function
+function generateColors(count: number): string[] {
+    const baseColors = [
+        { r: 255, g: 99, b: 132 },    // Pink/Red
+        { r: 54, g: 162, b: 235 },    // Blue
+        { r: 255, g: 206, b: 86 },    // Yellow
+        { r: 75, g: 192, b: 192 },    // Teal
+        { r: 153, g: 102, b: 255 },   // Purple
+        { r: 255, g: 159, b: 64 }     // Orange
+    ];
+
+    const colors: string[] = [];
+    
+    for (let i = 0; i < count; i++) {
+        if (i < baseColors.length) {
+            // Use base colors first
+            const { r, g, b } = baseColors[i];
+            colors.push(`rgb(${r}, ${g}, ${b})`);
+        } else {
+            // Generate new colors by rotating hue
+            const hue = (i * 137.508) % 360; // Golden angle approximation
+            colors.push(`hsl(${hue}, 70%, 60%)`);
+        }
+    }
+
+    return colors;
+}
+
 export default function DashboardPage() {
     const { user } = useAuth();
     const router = useRouter();
@@ -136,13 +164,7 @@ export default function DashboardPage() {
         datasets: [
             {
                 data: Object.values(stats.languageBreakdown),
-                backgroundColor: [
-                    "#FF6384",
-                    "#36A2EB",
-                    "#FFCE56",
-                    "#4BC0C0",
-                    "#9966FF",
-                ],
+                backgroundColor: generateColors(Object.keys(stats.languageBreakdown).length),
             },
         ],
     };
@@ -220,13 +242,48 @@ export default function DashboardPage() {
                                     <CardTitle>Language Distribution</CardTitle>
                                 </CardHeader>
                                 <CardContent className="h-[300px]">
-                                    <Pie 
-                                        data={languageData}
-                                        options={{
-                                            responsive: true,
-                                            maintainAspectRatio: false,
-                                        }}
-                                    />
+                                    {Object.keys(stats.languageBreakdown).length > 0 ? (
+                                        <div className="grid grid-cols-[1fr,auto] gap-8 h-full">
+                                            <div className="relative">
+                                                <Pie 
+                                                    data={languageData}
+                                                    options={{
+                                                        responsive: true,
+                                                        maintainAspectRatio: false,
+                                                        plugins: {
+                                                            legend: {
+                                                                display: false
+                                                            }
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="min-w-[280px] h-full flex flex-col relative">
+                                                <div 
+                                                    className="absolute inset-0 grid grid-cols-2 gap-x-4 gap-y-3 pr-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent"
+                                                >
+                                                    {Object.entries(stats.languageBreakdown).map(([language, count], index) => (
+                                                        <div key={language} className="flex items-center gap-2 py-0.5 min-h-[24px]">
+                                                            <div 
+                                                                className="w-3 h-3 rounded-sm flex-shrink-0" 
+                                                                style={{ backgroundColor: languageData.datasets[0].backgroundColor[index] }}
+                                                            />
+                                                            <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                                                {language}: {count}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center">
+                                            <div className="text-center text-muted-foreground">
+                                                <p>No language data available</p>
+                                                <p className="text-sm mt-1">Start paraphrasing to see your language distribution</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
 

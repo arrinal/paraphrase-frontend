@@ -5,8 +5,11 @@ import Layout from '../components/Layout';
 import ParaphraseForm from '../components/ParaphraseForm';
 import ParaphraseHistory from '../components/ParaphraseHistory';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { getParaphraseHistory, getUsedLanguages } from '../utils/api';
+import { getParaphraseHistory, getUsedLanguages, getUserSubscription } from '../utils/api';
 import { SUPPORTED_LANGUAGES } from '../utils/constants';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import type { Subscription } from '@/types/subscription';
 
 interface HistoryEntry {
     id: number;
@@ -34,12 +37,51 @@ export default function ParaphrasePage() {
     const [copiedText, setCopiedText] = useState<'original' | 'paraphrased' | null>(null);
     const itemsPerPage = 5;
     const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
+    const [subscription, setSubscription] = useState<Subscription | null>(null);
+    const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
+    const [countdown, setCountdown] = useState(5);
+    const [availableStyles, setAvailableStyles] = useState<string[]>([]);
 
     useEffect(() => {
-        if (!isLoading && !user) {
-            router.push('/');
+        const checkAccess = async () => {
+            if (!user) {
+                router.push('/');
+                return;
+            }
+
+            setIsLoadingSubscription(true);
+            try {
+                const subscriptionData = await getUserSubscription();
+                setSubscription(subscriptionData);
+            } catch (error) {
+                console.error('Failed to check subscription:', error);
+            } finally {
+                setIsLoadingSubscription(false);
+            }
+        };
+
+        if (!isLoading) {
+            checkAccess();
         }
     }, [user, isLoading, router]);
+
+    // Countdown effect for redirect
+    useEffect(() => {
+        if (!isLoadingSubscription && (!subscription || (subscription.status !== 'active' && subscription.status !== 'trial'))) {
+            const timer = setInterval(() => {
+                setCountdown((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(timer);
+                        router.push('/pricing');
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+            return () => clearInterval(timer);
+        }
+    }, [subscription, isLoadingSubscription, router]);
 
     useEffect(() => {
         if (user) {
@@ -57,6 +99,11 @@ export default function ParaphrasePage() {
                 new Set(historyData.map(item => item.language))
             ).filter(Boolean);
             setAvailableLanguages(uniqueLanguages);
+            
+            const uniqueStyles = Array.from(
+                new Set(historyData.map(item => item.style))
+            ).filter(Boolean);
+            setAvailableStyles(uniqueStyles);
             
             let filteredData = [...historyData];
             if (filters.language) {
@@ -95,11 +142,48 @@ export default function ParaphrasePage() {
         setCurrentPage(1); // Reset to first page when filters change
     };
 
-    if (isLoading) {
+    // Show loading state while checking auth and subscription
+    if (isLoading || isLoadingSubscription) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <LoadingSpinner size="large" />
-            </div>
+            <Layout>
+                <div className="min-h-screen flex items-center justify-center">
+                    <LoadingSpinner size="large" />
+                </div>
+            </Layout>
+        );
+    }
+
+    // Show upgrade prompt with countdown for users without subscription
+    if (!subscription || (subscription.status !== 'active' && subscription.status !== 'trial')) {
+        return (
+            <Layout>
+                <div className="max-w-2xl mx-auto px-4 py-16">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Subscription Required</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <p className="text-muted-foreground">
+                                You need an active subscription to access the paraphrasing feature.
+                            </p>
+                            <p className="text-sm text-muted-foreground text-center">
+                                You'll be redirected to pricing page in {countdown} seconds
+                            </p>
+                            <div className="flex flex-col items-center gap-2">
+                                <Button 
+                                    onClick={() => router.push('/pricing')}
+                                    className="w-full max-w-sm"
+                                >
+                                    View Pricing Plans Now
+                                </Button>
+                                <span className="text-sm text-muted-foreground">
+                                    or wait to be redirected automatically
+                                </span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </Layout>
         );
     }
 
@@ -142,10 +226,11 @@ export default function ParaphrasePage() {
                                 className="border rounded-md px-2 py-1"
                             >
                                 <option value="">All Styles</option>
-                                <option value="standard">Standard</option>
-                                <option value="formal">Formal</option>
-                                <option value="casual">Casual</option>
-                                {/* Add more style options */}
+                                {availableStyles.map((style) => (
+                                    <option key={style} value={style}>
+                                        {style.charAt(0).toUpperCase() + style.slice(1)}
+                                    </option>
+                                ))}
                             </select>
 
                             <input

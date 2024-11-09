@@ -4,20 +4,37 @@ export const MAX_TEXT_LENGTH = 1000
 
 export const SUPPORTED_LANGUAGES = [
   { value: "auto", label: "Auto-Detect" },
+  { value: "Afrikaans", label: "Afrikaans" },
+  { value: "Chinese", label: "Chinese" },
+  { value: "Danish", label: "Danish" },
+  { value: "Dutch", label: "Dutch" },
   { value: "English", label: "English" },
-  { value: "Spanish", label: "Spanish" },
   { value: "French", label: "French" },
   { value: "German", label: "German" },
-  { value: "Chinese", label: "Chinese" },
+  { value: "Hindi", label: "Hindi" },
+  { value: "Indonesian", label: "Indonesian" },
+  { value: "Italian", label: "Italian" },
   { value: "Japanese", label: "Japanese" },
+  { value: "Malay", label: "Malay" },
+  { value: "Norwegian", label: "Norwegian" },
+  { value: "Polish", label: "Polish" },
+  { value: "Portuguese", label: "Portuguese" },
+  { value: "Romanian", label: "Romanian" },
+  { value: "Russian", label: "Russian" },
+  { value: "Spanish", label: "Spanish" },
+  { value: "Swedish", label: "Swedish" },
+  { value: "Tagalog", label: "Tagalog" },
+  { value: "Turkish", label: "Turkish" },
+  { value: "Ukrainian", label: "Ukrainian" },
+  { value: "Vietnamese", label: "Vietnamese" },
 ] as const
 
 export const PARAPHRASE_STYLES = [
   { value: "standard", label: "Standard" },
   { value: "formal", label: "Formal" },
+  { value: "academic", label: "Academic" },
   { value: "casual", label: "Casual" },
   { value: "creative", label: "Creative" },
-  { value: "professional", label: "Professional" },
 ] as const
 
 export const API_ROUTES = {
@@ -38,38 +55,20 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost
 
 export const SUBSCRIPTION_PLANS: Plan[] = [
   {
-    id: 'basic',
-    name: 'Basic',
-    price: 9.99,
-    iosProductId: 'com.frazai.basic',
-    currency: 'USD',
-    interval: 'month',
-    features: [
-      'Up to 1,000 characters per request',
-      '50 requests per day',
-      'Standard paraphrasing styles',
-    ],
-    limits: {
-      charactersPerRequest: 1000,
-      requestsPerDay: 50,
-      bulkParaphrase: false,
-    },
-  },
-  {
     id: 'pro',
-    name: 'Professional',
-    price: 19.99,
+    name: 'Pro',
+    price: 5,
     iosProductId: 'com.frazai.pro',
     currency: 'USD',
     interval: 'month',
     features: [
-      'Up to 5,000 characters per request',
-      'Unlimited requests',
+      'Paraphrase in any language (auto-detect)',
+      'Paraphrase and translate at the same time',
+      'Unlimited paraphrase with AI',
       'All paraphrasing styles',
-      'Bulk paraphrasing',
     ],
     limits: {
-      charactersPerRequest: 5000,
+      charactersPerRequest: -1, // unlimited
       requestsPerDay: -1, // unlimited
       bulkParaphrase: true,
     },

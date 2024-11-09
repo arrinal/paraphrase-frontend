@@ -1,7 +1,9 @@
-import { useAuth } from "@/context/AuthContext"
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/router"
+import { useAuth } from "@/context/AuthContext"
+import { Button } from "@/components/ui/button"
+import { AuthModal } from "@/components/auth/AuthModal"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,49 +13,78 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { UserCircle } from "lucide-react"
-import { AuthModal } from "./auth/AuthModal"
-import { useState } from "react"
+import { useSubscription } from '@/context/SubscriptionContext';
 
 export default function Header() {
-  const { user, logout } = useAuth()
   const router = useRouter()
+  const { user, logout } = useAuth()
+  const { subscription, isLoading } = useSubscription()
   const [showAuthModal, setShowAuthModal] = useState(false)
 
   const handleLogout = () => {
     logout()
-    router.push('/')
+    router.push("/")
   }
 
-  // Always include Pricing, then add other nav items if user is logged in
-  const navItems = [
-    { href: '/pricing', label: 'Pricing' },
-    ...(user ? [
-      { href: '/dashboard', label: 'Dashboard' },
-      { href: '/paraphrase', label: 'Paraphrase' },
-      { href: '/settings', label: 'Settings' },
-    ] : [])
-  ]
+  const hasValidSubscription = subscription?.status === 'active' || subscription?.status === 'trial'
+  const shouldShowPricing = !user || !hasValidSubscription
+
+  const renderNavigation = !isLoading && (
+    <nav className="hidden md:flex items-center gap-6">
+      {user && (
+        <Link
+          href="/dashboard"
+          className={`flex items-center text-sm font-medium transition-colors hover:text-primary ${
+            router.pathname === "/dashboard" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          Dashboard
+        </Link>
+      )}
+
+      {user && hasValidSubscription && (
+        <Link
+          href="/paraphrase"
+          className={`flex items-center text-sm font-medium transition-colors hover:text-primary ${
+            router.pathname === "/paraphrase" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          Paraphrase
+        </Link>
+      )}
+
+      {shouldShowPricing && (
+        <Link
+          href="/pricing"
+          className={`flex items-center text-sm font-medium transition-colors hover:text-primary ${
+            router.pathname === "/pricing" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          Pricing
+        </Link>
+      )}
+
+      {user && (
+        <Link
+          href="/settings"
+          className={`flex items-center text-sm font-medium transition-colors hover:text-primary ${
+            router.pathname === "/settings" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          Settings
+        </Link>
+      )}
+    </nav>
+  )
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="border-b">
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-8">
+        <div className="flex gap-6 md:gap-10 items-center">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl">Fraz AI</span>
+            <span className="text-xl font-bold">Fraz AI</span>
           </Link>
-          <nav className="hidden md:flex gap-6">
-            {navItems.map((item) => (
-              <Link 
-                key={item.href}
-                href={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  router.pathname === item.href ? 'text-primary' : 'text-muted-foreground'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          {renderNavigation}
         </div>
 
         <div className="flex items-center gap-4">
@@ -70,6 +101,7 @@ export default function Header() {
                 <DropdownMenuItem onClick={() => router.push('/settings')}>
                   Settings
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   Log out
                 </DropdownMenuItem>

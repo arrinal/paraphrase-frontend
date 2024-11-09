@@ -14,10 +14,13 @@ export interface Plan {
 }
 
 export interface Subscription {
-  id: string;
-  userId: number;
-  planId: string;
+  id: number;
+  user_id: number;
+  paddle_subscription_id: string;
+  plan_id: string;
   status: 'active' | 'canceled' | 'trial' | 'expired';
-  currentPeriodEnd: string;
-  cancelAtPeriodEnd: boolean;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  created_at: string;
+  updated_at: string;
 } 
