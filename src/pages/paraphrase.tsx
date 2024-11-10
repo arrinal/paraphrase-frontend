@@ -67,7 +67,7 @@ export default function ParaphrasePage() {
 
     // Countdown effect for redirect
     useEffect(() => {
-        if (!isLoadingSubscription && (!subscription || (subscription.status !== 'active' && subscription.status !== 'trial'))) {
+        if (!isLoadingSubscription && (!subscription || subscription.status !== 'active')) {
             const timer = setInterval(() => {
                 setCountdown((prev) => {
                     if (prev <= 1) {
@@ -154,7 +154,7 @@ export default function ParaphrasePage() {
     }
 
     // Show upgrade prompt with countdown for users without subscription
-    if (!subscription || (subscription.status !== 'active' && subscription.status !== 'trial')) {
+    if (!subscription || subscription.status !== 'active') {
         return (
             <Layout>
                 <div className="max-w-2xl mx-auto px-4 py-16">

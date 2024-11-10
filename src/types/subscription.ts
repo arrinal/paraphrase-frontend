@@ -3,7 +3,7 @@ export interface Plan {
   name: string;
   price: number;
   currency: string;
-  interval: 'month' | 'year';
+  interval: 'month' | 'once';
   features: string[];
   limits: {
     charactersPerRequest: number;
@@ -18,7 +18,7 @@ export interface Subscription {
   user_id: number;
   paddle_subscription_id: string;
   plan_id: string;
-  status: 'active' | 'canceled' | 'trial' | 'expired';
+  status: 'active' | 'canceled' | 'expired';
   current_period_end: string;
   cancel_at_period_end: boolean;
   created_at: string;

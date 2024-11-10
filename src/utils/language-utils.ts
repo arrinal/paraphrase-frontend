@@ -37,19 +37,21 @@ const COUNTRY_LANGUAGE_MAP: LanguageCountryMap = {
 };
 
 export function getOrderedLanguages(countryCode: string): SupportedLanguage[] {
-  // Find the auto-detect option from SUPPORTED_LANGUAGES
+  // Find the auto-detect option and English
   const autoDetect = SUPPORTED_LANGUAGES.find(lang => lang.value === 'auto')!;
   const english = SUPPORTED_LANGUAGES.find(lang => lang.value === 'English')!;
   
   // Get the preferred language based on country code
   const preferredLanguage = COUNTRY_LANGUAGE_MAP[countryCode];
   
-  // Filter out auto-detect and the preferred language (if any)
+  // Filter out auto-detect, English, and preferred language
   const otherLanguages = SUPPORTED_LANGUAGES.filter(lang => 
     lang.value !== 'auto' && 
     lang.value !== preferredLanguage &&
     lang.value !== 'English'
   );
+
+  let orderedLanguages: SupportedLanguage[] = [];
 
   if (preferredLanguage) {
     const preferredLang = SUPPORTED_LANGUAGES.find(
@@ -57,19 +59,39 @@ export function getOrderedLanguages(countryCode: string): SupportedLanguage[] {
     );
     
     if (preferredLang) {
-      return [
+      orderedLanguages = [
         autoDetect,
         preferredLang,
         english,
         ...otherLanguages
       ];
     }
+  } else {
+    orderedLanguages = [
+      autoDetect,
+      english,
+      ...otherLanguages
+    ];
   }
 
-  // If no preferred language, return: [Auto-Detect, English, ...rest]
-  return [
-    autoDetect,
-    english,
-    ...otherLanguages
-  ];
+  // Reorder for vertical columns
+  const columnLength = Math.ceil(orderedLanguages.length / 3);
+  const verticalOrdered: SupportedLanguage[] = [];
+  
+  for (let i = 0; i < columnLength; i++) {
+    // First column
+    if (i < orderedLanguages.length) {
+      verticalOrdered.push(orderedLanguages[i]);
+    }
+    // Second column
+    if (i + columnLength < orderedLanguages.length) {
+      verticalOrdered.push(orderedLanguages[i + columnLength]);
+    }
+    // Third column
+    if (i + 2 * columnLength < orderedLanguages.length) {
+      verticalOrdered.push(orderedLanguages[i + 2 * columnLength]);
+    }
+  }
+
+  return verticalOrdered;
 } 

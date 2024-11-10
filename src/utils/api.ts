@@ -150,28 +150,23 @@ export async function getUserSubscription(): Promise<Subscription | null> {
   }
 }
 
-export async function createCheckoutSession(planId: string, isIOS: boolean = false) {
-  try {
-    const response = await fetch(`${API_BASE_URL}${API_ROUTES.CHECKOUT}`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ 
-        planId,
-        platform: isIOS ? 'ios' : 'web'
-      }),
-    });
-    
-    // If endpoint doesn't exist yet, return mock response
-    if (response.status === 404) {
-      return { url: '#' }; // Mock response until backend is ready
-    }
-    
-    return handleResponse(response);
-  } catch (error) {
-    console.warn('Checkout endpoint not implemented yet:', error);
-    return { url: '#' };
+export const createCheckoutSession = async (planId: string) => {
+  const response = await fetch(`${API_BASE_URL}${API_ROUTES.CHECKOUT}`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ 
+      planId,
+      platform: 'web'
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to create checkout session');
   }
-}
+
+  return response.json();
+};
 
 export async function cancelSubscription() {
   const response = await fetch(`${API_BASE_URL}${API_ROUTES.CANCEL_SUBSCRIPTION}`, {
@@ -180,3 +175,17 @@ export async function cancelSubscription() {
   });
   return handleResponse(response);
 }
+
+export const activateTrialSubscription = async () => {
+  const response = await fetch(`${API_BASE_URL}${API_ROUTES.SUBSCRIPTION}/trial`, {
+    method: 'POST',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to activate trial');
+  }
+
+  return response.json();
+};

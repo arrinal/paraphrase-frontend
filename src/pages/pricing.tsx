@@ -2,14 +2,15 @@ import { useAuth } from "@/context/AuthContext"
 import Layout from "@/components/Layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Check } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 import { SUBSCRIPTION_PLANS } from "@/utils/constants"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
-import { getUserSubscription } from "@/utils/api"
+import { getUserSubscription, activateTrialSubscription, createCheckoutSession } from "@/utils/api"
 import type { Subscription } from "@/types/subscription"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { useToast } from "@/context/ToastContext"
+import { useSubscription } from "@/context/SubscriptionContext"
 
 export default function PricingPage() {
   const { user } = useAuth()
@@ -18,6 +19,7 @@ export default function PricingPage() {
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const { refetchSubscription } = useSubscription()
 
   useEffect(() => {
     if (user) {
@@ -25,7 +27,7 @@ export default function PricingPage() {
     }
   }, [user])
 
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (planId: string) => {
     if (!user) {
       setShowAuthModal(true)
       return
@@ -33,11 +35,22 @@ export default function PricingPage() {
 
     setIsLoading(true)
     try {
-      // For now, just use mock session
-      router.push('/checkout/success?session_id=mock_session_6_pro')
+      if (planId === 'trial') {
+        await activateTrialSubscription()
+        await refetchSubscription()
+        router.push('/paraphrase')
+      } else {
+        const { url } = await createCheckoutSession(planId)
+        if (url) {
+          await refetchSubscription()
+          router.push(url)
+        } else {
+          throw new Error('Failed to create checkout session')
+        }
+      }
     } catch (error) {
       showToast(
-        error instanceof Error ? error.message : 'Failed to start checkout',
+        error instanceof Error ? error.message : 'Failed to activate subscription',
         'error'
       )
     } finally {
@@ -45,62 +58,79 @@ export default function PricingPage() {
     }
   }
 
-  const plan = SUBSCRIPTION_PLANS[0]
-  
-  const isCurrentPlan = Boolean(
-    currentSubscription?.plan_id === 'pro' && 
-    currentSubscription?.status === 'active'
-  )
-
   return (
     <Layout>
       <div className="container py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Pricing</h1>
+          <h1 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
           <p className="text-lg text-muted-foreground">
-            Start with a 14-day free trial. No credit card required.
+            Start with a trial. No credit card required.
           </p>
         </div>
 
-        <div className="max-w-md mx-auto">
-          <Card className="relative flex flex-col">
-            {isCurrentPlan && (
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm">
-                Current Plan
-              </div>
-            )}
-            <CardHeader>
-              <CardTitle className="text-2xl">{plan.name}</CardTitle>
-              <div className="text-3xl font-bold mt-2">
-                ${plan.price}
-                <span className="text-base font-normal text-muted-foreground">
-                  /month
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col flex-1">
-              <ul className="space-y-3 flex-1">
-                {plan.features.map((feature: string, i: number) => (
-                  <li key={i} className="flex items-center">
-                    <Check className="h-4 w-4 mr-2 text-green-500" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button
-                className="w-full mt-6"
-                onClick={handleSubscribe}
-                variant={isCurrentPlan ? "outline" : "default"}
-                disabled={isCurrentPlan || isLoading}
+        <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+          {SUBSCRIPTION_PLANS.map((plan) => {
+            const isCurrentPlan = currentSubscription?.plan_id === plan.id && 
+                                currentSubscription?.status === 'active'
+            const isPro = plan.id === 'pro'
+
+            return (
+              <Card 
+                key={plan.id} 
+                className={`relative flex flex-col ${isPro ? 'border-primary' : ''}`}
               >
-                {isCurrentPlan 
-                  ? "Current Plan" 
-                  : isLoading 
-                    ? "Processing..." 
-                    : "Subscribe for $5/month"}
-              </Button>
-            </CardContent>
-          </Card>
+                {isCurrentPlan && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm">
+                    Current Plan
+                  </div>
+                )}
+                {isPro && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-full text-sm">
+                    Most Popular
+                  </div>
+                )}
+                <CardHeader>
+                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                  <div className="text-3xl font-bold mt-2">
+                    {plan.price === 0 ? (
+                      "Free"
+                    ) : (
+                      <>
+                        ${plan.price}
+                        <span className="text-base font-normal text-muted-foreground">
+                          /month
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="flex flex-col flex-1">
+                  <ul className="space-y-3 flex-1">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-center">
+                        <Check className="h-4 w-4 mr-2 text-green-500" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    className="w-full mt-6"
+                    onClick={() => handleSubscribe(plan.id)}
+                    variant={isCurrentPlan ? "outline" : isPro ? "default" : "secondary"}
+                    disabled={isCurrentPlan || isLoading}
+                  >
+                    {isCurrentPlan 
+                      ? "Current Plan" 
+                      : isLoading 
+                        ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</>
+                        : plan.id === 'trial' 
+                          ? "Start Trial" 
+                          : `Subscribe for $${plan.price}/month`}
+                  </Button>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       </div>
 

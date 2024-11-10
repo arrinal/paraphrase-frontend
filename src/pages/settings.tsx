@@ -7,10 +7,21 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { useToast } from "@/context/ToastContext"
-import { updateUserSettings, getUserSubscription } from "@/utils/api"
+import { updateUserSettings, getUserSubscription, cancelSubscription } from "@/utils/api"
 import type { Subscription } from "@/types/subscription"
 import { SUBSCRIPTION_PLANS } from "@/utils/constants"
 import { useRouter } from "next/router"
+import { useSubscription } from "@/context/SubscriptionContext"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function SettingsPage() {
   const { user } = useAuth()
@@ -25,6 +36,8 @@ export default function SettingsPage() {
     newPassword: "",
     confirmPassword: "",
   })
+  const { refetchSubscription } = useSubscription()
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
 
   useEffect(() => {
     const loadSubscription = async () => {
@@ -83,6 +96,24 @@ export default function SettingsPage() {
   const currentPlan = subscription 
     ? SUBSCRIPTION_PLANS.find(plan => plan.id === subscription.plan_id)
     : null
+
+  const handleCancelPlan = async () => {
+    setIsLoading(true)
+    try {
+      await cancelSubscription()
+      const updatedSubscription = await getUserSubscription() // Fetch latest subscription data
+      setSubscription(updatedSubscription) // Update local state
+      showToast('Subscription cancelled successfully', 'success')
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'Failed to cancel subscription',
+        'error'
+      )
+    } finally {
+      setIsLoading(false)
+      setShowCancelDialog(false)
+    }
+  }
 
   return (
     <Layout>
@@ -191,21 +222,42 @@ export default function SettingsPage() {
                     <span className={`font-medium ${
                       subscription.status === 'active' ? 'text-green-600' : 'text-yellow-600'
                     }`}>
-                      {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                      {subscription.status === 'active' && subscription.cancel_at_period_end 
+                        ? 'Cancels at period end'
+                        : subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Renewal Date</span>
-                    <span className="font-medium">
-                      {new Date(subscription.current_period_end).toLocaleDateString()}
-                    </span>
-                  </div>
+                  {subscription?.plan_id !== 'trial' && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">
+                        {subscription.cancel_at_period_end ? 'Access Until' : 'Renewal Date'}
+                      </span>
+                      <span className="font-medium">
+                        {new Date(subscription.current_period_end).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
                   <div className="pt-4 flex justify-end">
                     <Button
                       variant="outline"
-                      onClick={() => router.push('/pricing')}
+                      onClick={subscription.plan_id === 'trial' 
+                        ? () => router.push('/pricing')
+                        : () => setShowCancelDialog(true)
+                      }
+                      disabled={isLoading || subscription.cancel_at_period_end}
                     >
-                      {subscription.status === 'active' ? 'Change Plan' : 'Renew Subscription'}
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {subscription.plan_id === 'trial' ? 'Upgrading...' : 'Canceling...'}
+                        </>
+                      ) : subscription.cancel_at_period_end ? (
+                        'Cancellation Scheduled'
+                      ) : subscription.plan_id === 'trial' ? (
+                        'Upgrade Plan'
+                      ) : (
+                        'Cancel Plan'
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -225,6 +277,35 @@ export default function SettingsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Cancel Subscription Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel your subscription? You will lose access to pro features at the end of your billing period.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCancelPlan}
+              disabled={isLoading}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Canceling...
+                </>
+              ) : (
+                'Yes, cancel subscription'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   )
 }
