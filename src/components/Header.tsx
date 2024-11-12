@@ -26,7 +26,7 @@ export default function Header() {
     router.push("/")
   }
 
-  const hasValidSubscription = subscription?.status === 'active' || subscription?.status === 'trial'
+  const hasValidSubscription = subscription?.status === 'active'
   const shouldShowPricing = !user || !hasValidSubscription
 
   const renderNavigation = !isLoading && (

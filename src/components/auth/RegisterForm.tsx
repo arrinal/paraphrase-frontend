@@ -22,8 +22,10 @@ export default function RegisterForm({ onSuccess, onLoginClick }: RegisterFormPr
     setIsLoading(true)
 
     try {
-      await register(name, email, password)
-      onSuccess()
+      const success = await register(name, email, password)
+      if (success) {
+        onSuccess()
+      }
     } catch (error) {
       console.error("Registration failed:", error)
     } finally {

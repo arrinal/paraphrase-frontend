@@ -6,7 +6,7 @@ import { Check, Loader2 } from "lucide-react"
 import { SUBSCRIPTION_PLANS } from "@/utils/constants"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
-import { getUserSubscription, activateTrialSubscription, createCheckoutSession } from "@/utils/api"
+import { getUserSubscription, activateTrialSubscription, createCheckoutSession, checkUserSubscription } from "@/utils/api"
 import type { Subscription } from "@/types/subscription"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { useToast } from "@/context/ToastContext"
@@ -20,6 +20,16 @@ export default function PricingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { refetchSubscription } = useSubscription()
+  const [hasPro, setHasPro] = useState(false)
+
+  useEffect(() => {
+    const fetchSubscriptionStatus = async () => {
+      const response = await checkUserSubscription()
+      setHasPro(response.hasPro)
+    }
+
+    fetchSubscriptionStatus()
+  }, [])
 
   useEffect(() => {
     if (user) {
@@ -36,7 +46,11 @@ export default function PricingPage() {
     setIsLoading(true)
     try {
       if (planId === 'trial') {
-        await activateTrialSubscription()
+        const trialResult = await activateTrialSubscription();
+        if (trialResult.error) {
+          showToast(trialResult.error, 'error');
+          return;
+        }
         await refetchSubscription()
         router.push('/paraphrase')
       } else {
@@ -58,9 +72,11 @@ export default function PricingPage() {
     }
   }
 
+  const hideTrialCard = hasPro
+
   return (
     <Layout>
-      <div className="container py-12">
+      <div className="container py-12 flex flex-col items-center">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
           <p className="text-lg text-muted-foreground">
@@ -68,23 +84,20 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+        <div className="flex flex-wrap justify-center gap-8 max-w-3xl w-full">
           {SUBSCRIPTION_PLANS.map((plan) => {
             const isCurrentPlan = currentSubscription?.plan_id === plan.id && 
                                 currentSubscription?.status === 'active'
             const isPro = plan.id === 'pro'
-
+            if (plan.id === 'trial' && hideTrialCard) {
+              return null;
+            }
             return (
               <Card 
                 key={plan.id} 
-                className={`relative flex flex-col ${isPro ? 'border-primary' : ''}`}
+                className={`relative flex flex-col w-80 ${isPro ? 'border-primary' : ''}`}
               >
-                {isCurrentPlan && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm">
-                    Current Plan
-                  </div>
-                )}
-                {isPro && (
+                {isPro && currentSubscription?.plan_id !== 'pro' && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-full text-sm">
                     Most Popular
                   </div>

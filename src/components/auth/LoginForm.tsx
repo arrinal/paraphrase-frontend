@@ -21,8 +21,10 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
     setIsLoading(true)
 
     try {
-      await login(email, password)
-      onSuccess()
+      const isSuccess = await login(email, password)
+      if (isSuccess) {
+        onSuccess()
+      }
     } catch (error) {
       console.error("Login failed:", error)
     } finally {

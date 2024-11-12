@@ -7,8 +7,8 @@ interface AuthContextType {
     user: User | null;
     isLoading: boolean;
     error: string | null;
-    login: (email: string, password: string) => Promise<void>;
-    register: (name: string, email: string, password: string) => Promise<void>;
+    login: (email: string, password: string) => Promise<boolean>;
+    register: (name: string, email: string, password: string) => Promise<boolean>;
     logout: () => void;
 }
 
@@ -49,17 +49,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError(null);
     };
 
-    const login = async (email: string, password: string) => {
+    const login = async (email: string, password: string): Promise<boolean> => {
         try {
-            setError(null);
             const response = await loginApi(email, password);
+            if (response.error) {
+                showToast(response.error, "error");
+                return false;
+            }
             handleAuthResponse(response);
             showToast("Successfully logged in", "success");
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Failed to login";
-            setError(message);
-            showToast(message, "error");
-            throw err;
+            if (window.location.pathname === '/pricing') {
+                window.location.reload();
+              }
+            return true;
+        } catch (error) {
+            showToast("An error occurred during login", "error");
+            return false;
         }
     };
 
@@ -67,13 +72,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             setError(null);
             const response = await registerApi(name, email, password);
+            if (response.error) {
+                showToast(response.error, "error");
+                return false;
+            }
             handleAuthResponse(response);
             showToast("Successfully registered", "success");
+            if (window.location.pathname === '/pricing') {
+                window.location.reload();
+              }
+            window.location.reload();
+            return true;
         } catch (err) {
             const message = err instanceof Error ? err.message : "Failed to register";
             setError(message);
             showToast(message, "error");
-            throw err;
+            return false;
         }
     };
 

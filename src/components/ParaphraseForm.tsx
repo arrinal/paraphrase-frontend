@@ -17,6 +17,7 @@ import { paraphraseText } from "@/utils/api"
 import { SUPPORTED_LANGUAGES, PARAPHRASE_STYLES, PLAN_LIMITS } from "@/utils/constants"
 import { MultiColumnSelect } from "./MultiColumnSelect"
 import { getOrderedLanguages } from "@/utils/language-utils"
+import { useToast } from "@/context/ToastContext"
 
 interface ParaphraseFormProps {
   onParaphraseComplete?: () => void
@@ -32,6 +33,7 @@ export default function ParaphraseForm({ onParaphraseComplete }: ParaphraseFormP
   const [orderedLanguages, setOrderedLanguages] = useState(getOrderedLanguages(''))
   const { user } = useAuth()
   const { subscription } = useSubscription()
+  const { showToast } = useToast()
   const isTrial = subscription?.plan_id === 'trial'
 
   // Combined IP-based language detection
@@ -78,9 +80,13 @@ export default function ParaphraseForm({ onParaphraseComplete }: ParaphraseFormP
     setError(null)
 
     try {
-      const response = await paraphraseText(text, language, style)
-      setResult(response.paraphrased)
+      const result = await paraphraseText(text, language, style);
       
+      if ('error' in result) {
+        showToast(result.error, 'error');
+      } else {
+        setResult(result.paraphrased);
+      }
       if (onParaphraseComplete) {
         onParaphraseComplete()
       }

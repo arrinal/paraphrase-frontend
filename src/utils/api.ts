@@ -186,11 +186,15 @@ interface ParaphraseResponse {
   history_id: number;
 }
 
+interface ErrorResponse {
+  error: string;
+}
+
 export async function paraphraseText(
   text: string,
   language: string,
   style: string
-): Promise<ParaphraseResponse | null> {
+): Promise<ParaphraseResponse | ErrorResponse> {
   const response = await fetchWithTokenRefresh(
     `${API_BASE_URL}${API_ROUTES.PARAPHRASE}`,
     {
@@ -199,11 +203,16 @@ export async function paraphraseText(
       body: JSON.stringify({ text, language, style }),
     }
   );
+
   const data = await handleResponse(response);
-  if (!response.ok) {
-    return null;
+
+  // Check if the response contains an error
+  if (data && 'error' in data) {
+    // Handle the error as needed
+    return { error: data.error }; // Return the error response
   }
-  return data;
+
+  return data; // Return the successful response
 }
 
 export async function getUserStats() {
@@ -311,8 +320,13 @@ export const activateTrialSubscription = async () => {
     }
   );
   const data = await handleResponse(response);
-  if (!response.ok) {
-    return null;
-  }
   return data;
 };
+
+export async function checkUserSubscription() {
+    const response = await fetch(`${API_BASE_URL}/subscription/check`, {
+        method: "GET",
+        headers: getHeaders(),
+    });
+    return handleResponse(response);
+}
