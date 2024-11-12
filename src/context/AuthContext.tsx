@@ -15,6 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_KEY = "auth_token";
+const REFRESH_TOKEN_KEY = "refresh_token";
 const USER_KEY = "user_data";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -40,8 +41,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
     }, []);
 
-    const handleAuthResponse = ({ token, user }: AuthResponse) => {
+    const handleAuthResponse = ({ token, refresh_token, user }: AuthResponse) => {
         localStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
         localStorage.setItem(USER_KEY, JSON.stringify(user));
         setUser(user);
         setError(null);
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const logout = () => {
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
         setUser(null);
         showToast("Successfully logged out", "success");
