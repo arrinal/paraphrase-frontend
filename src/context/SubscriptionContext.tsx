@@ -24,8 +24,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     }
 
     try {
-      const data = await getUserSubscription();
-      setSubscription(data);
+      const response = await getUserSubscription();
+      if (response.error) {
+        console.error('Failed to load subscription:', response.error);
+        setSubscription(null);
+      } else {
+        setSubscription(response.data);
+      }
     } catch (error) {
       console.error('Failed to load subscription:', error);
       setSubscription(null);

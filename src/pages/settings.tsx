@@ -42,17 +42,21 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadSubscription = async () => {
       try {
-        const data = await getUserSubscription()
-        setSubscription(data)
+        const response = await getUserSubscription();
+        if (response.error) {
+          showToast(response.error, "error");
+          return;
+        }
+        setSubscription(response.data);
       } catch (error) {
-        console.error("Failed to load subscription:", error)
+        showToast("Failed to load subscription", "error");
       }
     }
 
     if (user) {
-      loadSubscription()
+      loadSubscription();
     }
-  }, [user])
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,12 +69,16 @@ export default function SettingsPage() {
 
     setIsLoading(true)
     try {
-      await updateUserSettings({
+      const response = await updateUserSettings({
         name: formData.name,
         email: formData.email,
         currentPassword: formData.currentPassword || undefined,
         newPassword: formData.newPassword || undefined,
       })
+      if (response?.error) {
+        showToast(response.error, "error")
+        return
+      }
       showToast("Settings updated successfully", "success")
       setFormData(prev => ({
         ...prev,
@@ -102,7 +110,7 @@ export default function SettingsPage() {
     try {
       await cancelSubscription()
       const updatedSubscription = await getUserSubscription() // Fetch latest subscription data
-      setSubscription(updatedSubscription) // Update local state
+      setSubscription(updatedSubscription.data) // Update local state
       showToast('Subscription cancelled successfully', 'success')
     } catch (error) {
       showToast(

@@ -10,6 +10,7 @@ import { SUPPORTED_LANGUAGES } from '../utils/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { Subscription } from '@/types/subscription';
+import { useToast } from "@/context/ToastContext";
 
 interface HistoryEntry {
     id: number;
@@ -41,6 +42,7 @@ export default function ParaphrasePage() {
     const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
     const [countdown, setCountdown] = useState(5);
     const [availableStyles, setAvailableStyles] = useState<string[]>([]);
+    const { showToast } = useToast();
 
     useEffect(() => {
         const checkAccess = async () => {
@@ -51,10 +53,14 @@ export default function ParaphrasePage() {
 
             setIsLoadingSubscription(true);
             try {
-                const subscriptionData = await getUserSubscription();
-                setSubscription(subscriptionData);
+                const response = await getUserSubscription();
+                if (response.error) {
+                    showToast(response.error, "error");
+                    return;
+                }
+                setSubscription(response.data);
             } catch (error) {
-                console.error('Failed to check subscription:', error);
+                showToast("Failed to check subscription", "error");
             } finally {
                 setIsLoadingSubscription(false);
             }
@@ -121,7 +127,7 @@ export default function ParaphrasePage() {
             
             setHistory(filteredData);
         } catch (error) {
-            console.error('Failed to load history:', error);
+            showToast("Failed to load history", "error");
         } finally {
             setIsLoadingHistory(false);
         }

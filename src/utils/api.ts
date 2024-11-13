@@ -22,8 +22,8 @@ function onTokenRefreshed(token: string) {
 // Keep handleResponse simple and generic
 async function handleResponse(response: Response) {
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    return error // Return the error object instead of throwing
+    const error = await response.json().catch(() => ({ error: 'An unexpected error occurred' }))
+    return error
   }
   
   // Handle 204 No Content
@@ -40,7 +40,7 @@ async function handleResponse(response: Response) {
   try {
     return JSON.parse(text)
   } catch {
-    return null
+    return { error: 'Invalid response format' }
   }
 }
 
@@ -247,7 +247,7 @@ export async function getParaphraseHistory(): Promise<HistoryEntry[]> {
     { headers: getHeaders() }
   );
   const data = await handleResponse(response);
-  if (!response.ok) {
+  if (!response.ok || data?.error) {
     return [];
   }
   return data?.history || [];
@@ -259,22 +259,28 @@ export async function getUsedLanguages(): Promise<string[]> {
     { headers: getHeaders() }
   );
   const data = await handleResponse(response);
-  if (!response.ok) {
+  if (!response.ok || data?.error) {
     return [];
   }
   return Array.isArray(data) ? data : [];
 }
 
-export async function getUserSubscription(): Promise<Subscription | null> {
+// Add this interface
+interface SubscriptionResponse {
+  data: Subscription | null;
+  error?: string;
+}
+
+export async function getUserSubscription(): Promise<SubscriptionResponse> {
   const response = await fetchWithTokenRefresh(
     `${API_BASE_URL}${API_ROUTES.SUBSCRIPTION}`,
     { headers: getHeaders() }
   );
   const data = await handleResponse(response);
-  if (!response.ok || data?.error === "no active subscription found") {
-    return null;
+  if (!response.ok || data?.error) {
+    return { data: null, error: data?.error || 'Failed to fetch subscription' };
   }
-  return data;
+  return { data };
 }
 
 export const createCheckoutSession = async (planId: string) => {
@@ -290,8 +296,8 @@ export const createCheckoutSession = async (planId: string) => {
     }
   );
   const data = await handleResponse(response);
-  if (!response.ok) {
-    return null;
+  if (!response.ok || data?.error) {
+    return { error: data?.error || 'Failed to create checkout session' };
   }
   return data;
 };
@@ -305,8 +311,8 @@ export async function cancelSubscription() {
     }
   );
   const data = await handleResponse(response);
-  if (!response.ok) {
-    return null;
+  if (!response.ok || data?.error) {
+    return { error: data?.error || 'Failed to cancel subscription' };
   }
   return data;
 }
@@ -320,13 +326,20 @@ export const activateTrialSubscription = async () => {
     }
   );
   const data = await handleResponse(response);
+  if (!response.ok || data?.error) {
+    return { error: data?.error || 'Failed to activate trial subscription' };
+  }
   return data;
 };
 
 export async function checkUserSubscription() {
-    const response = await fetch(`${API_BASE_URL}/subscription/check`, {
-        method: "GET",
-        headers: getHeaders(),
-    });
-    return handleResponse(response);
+  const response = await fetch(`${API_BASE_URL}/subscription/check`, {
+    method: "GET",
+    headers: getHeaders(),
+  });
+  const data = await handleResponse(response);
+  if (!response.ok || data?.error) {
+    return { error: data?.error || 'Failed to check subscription status' };
+  }
+  return data;
 }

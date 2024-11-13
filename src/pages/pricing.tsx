@@ -25,6 +25,10 @@ export default function PricingPage() {
   useEffect(() => {
     const fetchSubscriptionStatus = async () => {
       const response = await checkUserSubscription()
+      if (response.error) {
+        showToast(response.error, "error");
+        return;
+      }
       setHasPro(response.hasPro)
     }
 
@@ -33,7 +37,13 @@ export default function PricingPage() {
 
   useEffect(() => {
     if (user) {
-      getUserSubscription().then(setCurrentSubscription)
+      getUserSubscription().then(response => {
+        if (response.error) {
+          showToast(response.error, "error");
+        } else {
+          setCurrentSubscription(response.data);
+        }
+      });
     }
   }, [user])
 
@@ -54,17 +64,19 @@ export default function PricingPage() {
         await refetchSubscription()
         router.push('/paraphrase')
       } else {
-        const { url } = await createCheckoutSession(planId)
-        if (url) {
+        const result = await createCheckoutSession(planId);
+        if (result.error) {
+          showToast(result.error, 'error');
+          return;
+        }
+        if (result.url) {
           await refetchSubscription()
-          router.push(url)
-        } else {
-          throw new Error('Failed to create checkout session')
+          router.push(result.url)
         }
       }
     } catch (error) {
       showToast(
-        error instanceof Error ? error.message : 'Failed to activate subscription',
+        error instanceof Error ? error.message : 'An unexpected error occurred',
         'error'
       )
     } finally {
