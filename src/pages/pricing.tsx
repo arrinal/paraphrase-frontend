@@ -6,7 +6,7 @@ import { Check, Loader2 } from "lucide-react"
 import { SUBSCRIPTION_PLANS } from "@/utils/constants"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
-import { getUserSubscription, activateTrialSubscription, createCheckoutSession, checkUserSubscription } from "@/utils/api"
+import { getUserSubscription, createCheckoutSession, checkUserSubscription } from "@/utils/api"
 import type { Subscription } from "@/types/subscription"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { useToast } from "@/context/ToastContext"
@@ -55,24 +55,14 @@ export default function PricingPage() {
 
     setIsLoading(true)
     try {
-      if (planId === 'trial') {
-        const trialResult = await activateTrialSubscription();
-        if (trialResult.error) {
-          showToast(trialResult.error, 'error');
-          return;
-        }
+      const result = await createCheckoutSession(planId);
+      if (result.error) {
+        showToast(result.error, 'error');
+        return;
+      }
+      if (result.url) {
         await refetchSubscription()
-        router.push('/paraphrase')
-      } else {
-        const result = await createCheckoutSession(planId);
-        if (result.error) {
-          showToast(result.error, 'error');
-          return;
-        }
-        if (result.url) {
-          await refetchSubscription()
-          router.push(result.url)
-        }
+        router.push(result.url)
       }
     } catch (error) {
       showToast(

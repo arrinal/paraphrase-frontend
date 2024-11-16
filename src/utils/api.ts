@@ -317,21 +317,6 @@ export async function cancelSubscription() {
   return data;
 }
 
-export const activateTrialSubscription = async () => {
-  const response = await fetchWithTokenRefresh(
-    `${API_BASE_URL}${API_ROUTES.SUBSCRIPTION}/trial`,
-    {
-      method: 'POST',
-      headers: getHeaders(),
-    }
-  );
-  const data = await handleResponse(response);
-  if (!response.ok || data?.error) {
-    return { error: data?.error || 'Failed to activate trial subscription' };
-  }
-  return data;
-};
-
 export async function checkUserSubscription() {
   const response = await fetch(`${API_BASE_URL}/subscription/check`, {
     method: "GET",

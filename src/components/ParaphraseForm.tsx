@@ -25,37 +25,58 @@ interface ParaphraseFormProps {
 
 export default function ParaphraseForm({ onParaphraseComplete }: ParaphraseFormProps) {
   const [text, setText] = useState("")
-  const [language, setLanguage] = useState("auto")
+  const { subscription } = useSubscription()
+  const isTrial = subscription?.plan_id === 'trial'
+  const [language, setLanguage] = useState('English') // Always start with English
   const [style, setStyle] = useState("standard")
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<string>("")
   const [error, setError] = useState<string | null>(null)
   const [orderedLanguages, setOrderedLanguages] = useState(getOrderedLanguages(''))
   const { user } = useAuth()
-  const { subscription } = useSubscription()
   const { showToast } = useToast()
-  const isTrial = subscription?.plan_id === 'trial'
+  const [hasInitialized, setHasInitialized] = useState(false)
 
-  // Combined IP-based language detection
+  // Set initial language based on subscription type and IP
   useEffect(() => {
-    if (!isTrial) {
-      fetch('https://ipapi.co/json/')
-        .then(res => res.json())
-        .then(data => {
-          const countryCode = data.country_code;
-          const ordered = getOrderedLanguages(countryCode);
-          setOrderedLanguages(ordered);
-          setLanguage(ordered[0].value); // Set to first language in ordered list
-        })
-        .catch(() => {
-          const defaultOrdered = getOrderedLanguages('');
-          setOrderedLanguages(defaultOrdered);
-          setLanguage('auto') // Fallback to auto-detect
-        })
-    } else {
+    if (!subscription) return; // Wait for subscription data
+
+    if (!hasInitialized) {
+      if (!isTrial) {
+        // Only for pro users, try to detect language from IP
+        fetch('https://ipapi.co/json/')
+          .then(res => res.json())
+          .then(data => {
+            const countryCode = data.country_code;
+            const ordered = getOrderedLanguages(countryCode);
+            setOrderedLanguages(ordered);
+            setLanguage(ordered[0].value);
+          })
+          .catch(() => {
+            const defaultOrdered = getOrderedLanguages('');
+            setOrderedLanguages(defaultOrdered);
+            setLanguage('auto')
+          })
+      }
+      setHasInitialized(true)
+    }
+  }, [subscription, isTrial, hasInitialized])
+
+  // Force English for trial users if they somehow select a different language
+  useEffect(() => {
+    if (isTrial && language !== 'English') {
       setLanguage('English')
     }
-  }, [isTrial])
+  }, [isTrial, language])
+
+  // Custom setLanguage function
+  const handleLanguageChange = (newLanguage: string) => {
+    if (isTrial && newLanguage !== 'English') {
+      setLanguage('English')
+    } else {
+      setLanguage(newLanguage)
+    }
+  }
 
   const availableLanguages = orderedLanguages.map(lang => ({
     ...lang,
@@ -121,7 +142,7 @@ export default function ParaphraseForm({ onParaphraseComplete }: ParaphraseFormP
               <Label>Language</Label>
               <Select
                 value={language}
-                onValueChange={setLanguage}
+                onValueChange={handleLanguageChange}
                 disabled={isLoading}
               >
                 <SelectTrigger>
