@@ -55,12 +55,11 @@ export default function ParaphrasePage() {
             try {
                 const response = await getUserSubscription();
                 if (response.error) {
-                    showToast(response.error, "error");
                     return;
                 }
                 setSubscription(response.data);
             } catch (error) {
-                showToast("Failed to check subscription", "error");
+                console.error("Failed to check subscription", error);
             } finally {
                 setIsLoadingSubscription(false);
             }

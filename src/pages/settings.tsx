@@ -44,12 +44,12 @@ export default function SettingsPage() {
       try {
         const response = await getUserSubscription();
         if (response.error) {
-          showToast(response.error, "error");
+          console.error('Failed to load subscription:', response.error);
           return;
         }
         setSubscription(response.data);
       } catch (error) {
-        showToast("Failed to load subscription", "error");
+        console.error('Failed to load subscription:', error);
       }
     }
 

@@ -26,7 +26,7 @@ export default function PricingPage() {
     const fetchSubscriptionStatus = async () => {
       const response = await checkUserSubscription()
       if (response.error) {
-        showToast(response.error, "error");
+        console.error('Failed to check subscription status:', response.error);
         return;
       }
       setHasPro(response.hasPro)
@@ -39,7 +39,7 @@ export default function PricingPage() {
     if (user) {
       getUserSubscription().then(response => {
         if (response.error) {
-          showToast(response.error, "error");
+          console.error('Failed to load subscription:', response.error);
         } else {
           setCurrentSubscription(response.data);
         }
