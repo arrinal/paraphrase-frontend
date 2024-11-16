@@ -17,6 +17,7 @@ COPY . .
 # Set environment to production
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_API_URL=https://frazai.com/api
 
 # Build the application with memory limit for Node
 ENV NODE_OPTIONS="--max_old_space_size=2048"

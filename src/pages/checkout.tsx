@@ -36,7 +36,7 @@ export default function CheckoutPage() {
 
     setIsLoading(true)
     try {
-      const response = await createCheckoutSession(selectedPlan.id, isIOS)
+      const response = await createCheckoutSession(selectedPlan.id)
       
       if (isIOS) {
         // Handle iOS in-app purchase
