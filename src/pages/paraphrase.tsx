@@ -211,14 +211,14 @@ export default function ParaphrasePage() {
 
                 {/* History Section */}
                 <div className="mt-12">
-                    <div className="flex justify-between items-center mb-6">
+                    <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center mb-6">
                         <h2 className="text-2xl font-bold text-gray-900">History</h2>
                         
                         {/* Filters */}
-                        <div className="flex space-x-4">
+                        <div className="flex flex-wrap gap-3">
                             <select
                                 onChange={(e) => handleFilterChange({ language: e.target.value || undefined })}
-                                className="border rounded-md px-2 py-1"
+                                className="min-w-[140px] border rounded-md px-2 py-1"
                             >
                                 <option value="">All Languages</option>
                                 {availableLanguages.map((lang) => (
@@ -228,7 +228,7 @@ export default function ParaphrasePage() {
 
                             <select
                                 onChange={(e) => handleFilterChange({ style: e.target.value || undefined })}
-                                className="border rounded-md px-2 py-1"
+                                className="min-w-[140px] border rounded-md px-2 py-1"
                             >
                                 <option value="">All Styles</option>
                                 {availableStyles.map((style) => (
@@ -243,7 +243,7 @@ export default function ParaphrasePage() {
                                 onChange={(e) => handleFilterChange({ 
                                     startDate: e.target.value ? new Date(e.target.value) : undefined 
                                 })}
-                                className="border rounded-md px-2 py-1"
+                                className="min-w-[140px] border rounded-md px-2 py-1"
                             />
                         </div>
                     </div>
