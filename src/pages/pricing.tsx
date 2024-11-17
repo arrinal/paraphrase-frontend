@@ -18,7 +18,7 @@ export default function PricingPage() {
   const router = useRouter()
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const { refetchSubscription } = useSubscription()
   const [hasPro, setHasPro] = useState(false)
 
@@ -53,7 +53,7 @@ export default function PricingPage() {
       return
     }
 
-    setIsLoading(true)
+    setLoadingPlan(planId)
     try {
       const result = await createCheckoutSession(planId);
       if (result.error) {
@@ -70,7 +70,7 @@ export default function PricingPage() {
         'error'
       )
     } finally {
-      setIsLoading(false)
+      setLoadingPlan(null)
     }
   }
 
@@ -91,6 +91,7 @@ export default function PricingPage() {
             const isCurrentPlan = currentSubscription?.plan_id === plan.id && 
                                 currentSubscription?.status === 'active'
             const isPro = plan.id === 'pro'
+            const isLoadingThisPlan = loadingPlan === plan.id
             if (plan.id === 'trial' && hideTrialCard) {
               return null;
             }
@@ -132,11 +133,11 @@ export default function PricingPage() {
                     className="w-full mt-6"
                     onClick={() => handleSubscribe(plan.id)}
                     variant={isCurrentPlan ? "outline" : isPro ? "default" : "secondary"}
-                    disabled={isCurrentPlan || isLoading}
+                    disabled={isCurrentPlan || isLoadingThisPlan}
                   >
                     {isCurrentPlan 
                       ? "Current Plan" 
-                      : isLoading 
+                      : isLoadingThisPlan 
                         ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</>
                         : plan.id === 'trial' 
                           ? "Start Trial" 
@@ -155,4 +156,4 @@ export default function PricingPage() {
       />
     </Layout>
   )
-} 
+}

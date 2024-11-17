@@ -241,24 +241,26 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle>Language Distribution</CardTitle>
                 </CardHeader>
-                <CardContent className="h-[400px] md:h-[300px] p-2 md:p-6">
+                <CardContent className="h-[500px] md:h-[300px] p-2 md:p-6">
                   {Object.keys(stats.languageBreakdown).length > 0 ? (
-                    <div className="grid grid-cols-1 gap-4 h-full">
-                      <div className="relative h-[200px]">
-                        <Pie 
-                          data={languageData}
-                          options={{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                              legend: {
-                                display: false
+                    <div className="grid md:grid-cols-2 gap-4 h-full">
+                      <div className="relative h-[200px] md:h-full flex items-center justify-center">
+                        <div className="w-full h-full max-h-[200px] md:max-h-full">
+                          <Pie 
+                            data={languageData}
+                            options={{
+                              responsive: true,
+                              maintainAspectRatio: false,
+                              plugins: {
+                                legend: {
+                                  display: false
+                                }
                               }
-                            }
-                          }}
-                        />
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-[150px] overflow-y-auto">
+                      <div className="h-[200px] md:h-full overflow-y-auto">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                           {Object.entries(stats.languageBreakdown).map(([language, count], index) => (
                             <div key={language} className="flex items-center gap-2 py-0.5">
